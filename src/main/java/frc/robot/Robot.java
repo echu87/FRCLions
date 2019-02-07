@@ -49,6 +49,7 @@ public class Robot extends TimedRobot {
 	Joystick _gamepad = new Joystick(0);
 	Encoder enc;
 	int distance;
+	int ticks;
 	edu.wpi.first.cameraserver.CameraServer server;
 
 	@Override
@@ -92,15 +93,18 @@ public class Robot extends TimedRobot {
 	
 	@Override
 	public void teleopPeriodic() {
-		
+		if(ticks - Math.abs(_intake.getSelectedSensorPosition()) <= 0) {
+			_intake.set(ControlMode.PercentOutput, 0.0);
+			_intake.getSensorCollection().setQuadraturePosition(0, 30);
+			ticks = 0;
+		}
+
 		/* Gamepad processing */
 		double forward = -1 * _gamepad.getY();
 		double turn = _gamepad.getX();		
 		
 		int count = _intake.getSelectedSensorPosition();
 
-		//System.out.println(count);
-		System.out.println(_intake.getSelectedSensorPosition());
 		if (_gamepad.getTrigger()) {
 			forward = Deadband(forward);
 			turn = Deadband(turn);
@@ -111,18 +115,19 @@ public class Robot extends TimedRobot {
 			turn = Turn_Scale(forward, turn);
 		}
 
-		// if (_gamepad.getRawButton(3)) {
-		// 	if (_intake.getSelectedSensorPosition() >= -80){
-		// 		_intake.set(ControlMode.PercentOutput, -.1);
-		// 	}
+		
 
-		// }
+		System.out.println(_intake.getSelectedSensorPosition());
 
-		// if (_gamepad.getRawButton(4)) {
-		// 	if (_intake.getSelectedSensorPosition() <= 80){
-		// 		_intake.set(ControlMode.PercentOutput, .1);
-		// 	}
-		// }
+		if (_gamepad.getRawButton(3)) {
+			_intake.set(ControlMode.PercentOutput, .1);
+			ticks = 80;
+		}
+
+		if (_gamepad.getRawButton(4)) {
+			_intake.set(ControlMode.PercentOutput, -.1);
+			ticks = 80;
+		}
 
 		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
 		_leftMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
