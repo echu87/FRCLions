@@ -111,24 +111,52 @@ public class Test extends TimedRobot  {
 			turn = Turn_Scale(forward, turn);
 		}
 
+
+		boolean isHeld3 = false;
+		boolean isHeld4 = false;
+
+		if (isHeld3) {
+			_intake.set(ControlMode.PercentOutput, .1);
+		}
+
+		if (isHeld4) {
+			_intake.set(ControlMode.PercentOutput, -.1);
+		}
+
+		if (tick > 80) {
+			isHeld3 = false;
+		}
+
+		if (tick < 80) {
+			isHeld4 = false;
+		}
+
 		if (_gamepad.getRawButton(3)) {
-            System.out.println("button 3 pressed like I said before 1");
-			if(_intake.getSelectedSensorPosition() < 250 || _intake.getSelectedSensorPosition() > -250){
-			_intake.set(ControlMode.Position, 90);
-			}
-			_intake.getSensorCollection().setQuadraturePosition(0, 5000);
+			isHeld3 = true;
+		}
+
+		if (_gamepad.getRawButton(4)) {
+			isHeld4 = true;
+		}
+
+		// if (_gamepad.getRawButton(3)) {
+        //     System.out.println("button 3 pressed like I said before 1");
+		// 	if(_intake.getSelectedSensorPosition() < 250 || _intake.getSelectedSensorPosition() > -250){
+		// 	_intake.set(ControlMode.Position, 90);
+		// 	}
+		// 	_intake.getSensorCollection().setQuadraturePosition(0, 5000);
           
             
-		}
-		if (_gamepad.getRawButton(4)) {
-			_intake.set(ControlMode.Position, 80);
-            _intake.getSensorCollection().setQuadraturePosition(0, 5000);
-			// if (tick >= -80 && tick <=80 ){
-			// 	System.out.println("button4 clicked");
-			// 	_intake.set(ControlMode.Position, tick-80);
+		// }
+		// if (_gamepad.getRawButton(4)) {
+		// 	_intake.set(ControlMode.Position, 80);
+        //     _intake.getSensorCollection().setQuadraturePosition(0, 5000);
+		// 	if (tick >= -80 && tick <=80 ){
+		// 		System.out.println("button4 clicked");
+		// 		_intake.set(ControlMode.Position, tick-80);
 				
-			// }
-		}
+		// 	}
+		// }
 		
 
 		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */

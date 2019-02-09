@@ -32,6 +32,9 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
 import org.opencv.videoio.Videoio;
+
+import frc.robot.Elevator;
+
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 
 
@@ -52,7 +55,7 @@ public class Robot extends TimedRobot {
 	int distance;
 	edu.wpi.first.cameraserver.CameraServer server;
 
-	boolean isHeld = false;
+	Elevator elevator = new Elevator(_intake, 0.0);
 
 	@Override
 	public void robotInit() {
@@ -89,7 +92,6 @@ public class Robot extends TimedRobot {
 		_intake.getSensorCollection().setQuadraturePosition(0, 30);
 		
 		cameraInit();
-		
 	}
 	
 	@Override
@@ -113,26 +115,31 @@ public class Robot extends TimedRobot {
 			turn = Turn_Scale(forward, turn);
 		}
 
-		if(!isHeld){
-			if (_gamepad.getRawButton(3) && tick < 80) {
-				System.out.println("Button 3");
-				_intake.set(ControlMode.PercentOutput, -.1);
-				isHeld = true;
-			} else {
-				_intake.set(ControlMode.PercentOutput, 0);
-			}
+		if (_gamepad.getRawButton(12)) {
+			System.out.println("Call Button Stuff");
+			elevator.pidWrite(3);
+		}
 
-			if (_gamepad.getRawButton(4) && tick > -80) {
-				System.out.println("Button 4");
-				_intake.set(ControlMode.PercentOutput, .1);
-				isHeld = true;
-			} else {
-				_intake.set(ControlMode.PercentOutput, 0);
-			}
-		}
-		else if(!_gamepad.getRawButton(3) && !_gamepad.getRawButton(4)) {
-			isHeld = false;
-		}
+		// if(!isHeld){
+		// 	if (_gamepad.getRawButton(3) && tick < 80) {
+		// 		System.out.println("Button 3");
+		// 		_intake.set(ControlMode.PercentOutput, -.1);
+		// 		isHeld = true;
+		// 	} else {
+		// 		_intake.set(ControlMode.PercentOutput, 0);
+		// 	}
+
+		// 	if (_gamepad.getRawButton(4) && tick > -80) {
+		// 		System.out.println("Button 4");
+		// 		_intake.set(ControlMode.PercentOutput, .1);
+		// 		isHeld = true;
+		// 	} else {
+		// 		_intake.set(ControlMode.PercentOutput, 0);
+		// 	}
+		// }
+		// else if(!_gamepad.getRawButton(3) && !_gamepad.getRawButton(4)) {
+		// 	isHeld = false;
+		// }
 
 		// if (_gamepad.getRawButton(3)) {
 		// 	if (tick >= -80 && tick <=80 ){
@@ -155,12 +162,14 @@ public class Robot extends TimedRobot {
 		// }
 		
 
-		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
-		_leftMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
-		_leftMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		_intake.set(ControlMode.PercentOutput, forward);
+
+		// /* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
+		// _leftMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		// _leftMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		
-		_rightMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-		_rightMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		// _rightMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		// _rightMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 
 		
 	}
