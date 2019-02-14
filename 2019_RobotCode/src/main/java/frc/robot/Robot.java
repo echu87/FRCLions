@@ -48,28 +48,24 @@ public class Robot extends TimedRobot {
 	// WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
 	// WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
 
-	WPI_TalonSRX _intake = new WPI_TalonSRX(8);
-  
+	 WPI_TalonSRX _intake = new WPI_TalonSRX(8);
+	boolean moveing = false;
 	Joystick _gamepad = new Joystick(0);
 	Encoder enc;
-	// int distance;
-	// edu.wpi.first.cameraserver.CameraServer server;
+	int distance;
+	edu.wpi.first.cameraserver.CameraServer server;
 
-<<<<<<< HEAD
-	// boolean isHeld = false;
-=======
 	Elevator elevator = new Elevator(_intake, 0.0);
->>>>>>> 46fd0c6c7e8b28ecb4ea9eda329db2c85b6fedb7
 
 	@Override
 	public void robotInit() {
-		//_intake.getSensorCollection().setQuadraturePosition(0, 30);
+		_intake.getSensorCollection().setQuadraturePosition(0, 30);
 	}
 
 	@Override
 	public void teleopInit() {
 		/* Ensure motor output is neutral during init */
-		//_leftMasterFront.set(ControlMode.PercentOutput, 0);
+		// _leftMasterFront.set(ControlMode.PercentOutput, 0);
 		// _leftMasterBack.set(ControlMode.PercentOutput, 0);
 		// _rightMasterFront.set(ControlMode.PercentOutput, 0);
 		// _rightMasterBack.set(ControlMode.PercentOutput, 0);
@@ -95,12 +91,8 @@ public class Robot extends TimedRobot {
 		_intake.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 1, 30);
 		_intake.getSensorCollection().setQuadraturePosition(0, 30);
 		
-<<<<<<< HEAD
 		//cameraInit();
 		
-=======
-		cameraInit();
->>>>>>> 46fd0c6c7e8b28ecb4ea9eda329db2c85b6fedb7
 	}
 	
 	@Override
@@ -114,48 +106,53 @@ public class Robot extends TimedRobot {
 		
 		System.out.println(tick);
 
-<<<<<<< HEAD
-		// if (_gamepad.getTrigger()) {
-		// 	forward = Deadband(forward);
-		// 	turn = Deadband(turn);
-		// 	turn = Turn_Scale(forward, turn);
-		// } else {
-		// 	forward = Deadband_Scale(forward);
-		// 	turn = Deadband_Scale(turn);
-		// 	turn = Turn_Scale(forward, turn);
-		// }
+		if (_gamepad.getTrigger()) {
+			forward = Deadband(forward);
+			turn = Deadband(turn);
+			turn = Turn_Scale(forward, turn);
+		} else {
+			forward = Deadband_Scale(forward);
+			turn = Deadband_Scale(turn);
+			turn = Turn_Scale(forward, turn);
+		}
 		
-		//if(!isHeld){
-			int P, I, D = 1;
-			int integral, previous_error, setpoint = 0;
-			
+	
+		int	position_wanted = 80;
+		position_wanted = 80;
+		if(moveing){
+		if (tick < position_wanted){
+		System.out.println("Button 3 run Big if");
+		_intake.set(ControlMode.PercentOutput, -.05);
+		System.out.println("Tick is " +(tick));
+		}
+		else{
+			moveing = false;
+		}
+		}else{
 			//PIDController pidpod = new PIDController(.1,.001,0.0,tick,_intake);
-			if (_gamepad.getRawButton(3) && tick < 80) {
+			if (_gamepad.getRawButton(3) && tick < position_wanted) {
 				System.out.println("Button 3 run");
-				_intake.set(ControlMode.PercentOutput, -.09);
-				System.out.println("Tick is " +(tick));
-
-				//isHeld = true;
+				
+				moveing=true;
+				
 			} 
-			else if (_gamepad.getRawButton(4) && tick > -80) {
+			else if (_gamepad.getRawButton(4) && tick > -position_wanted) {
 				System.out.println("Button 4 run");
-				_intake.set(ControlMode.PercentOutput, .09);
-				//isHeld = true;
+				_intake.set(ControlMode.PercentOutput, .05);
+				
 			}
 			else {
 				System.out.println("Button 3 no run");
 				System.out.println("Button 4  no run");
 				_intake.set(ControlMode.PercentOutput, 0);
 			}
-
-	
+			_intake.set(ControlMode.PercentOutput, forward);
 		}
-		// else if(!_gamepad.getRawButton(3) && !_gamepad.getRawButton(4)) {
-		// 	isHeld = false;
-		// }
+		
+		
+		
+		
 
-		//_intake.set(ControlMode.PercentOutput, forward);
-=======
 		if (_gamepad.getTrigger()) {
 			forward = Deadband(forward);
 			turn = Deadband(turn);
@@ -170,57 +167,10 @@ public class Robot extends TimedRobot {
 			System.out.println("Call Button Stuff");
 			elevator.pidWrite(3);
 		}
->>>>>>> 46fd0c6c7e8b28ecb4ea9eda329db2c85b6fedb7
 
-		// if(!isHeld){
-		// 	if (_gamepad.getRawButton(3) && tick < 80) {
-		// 		System.out.println("Button 3");
-		// 		_intake.set(ControlMode.PercentOutput, -.1);
-		// 		isHeld = true;
-		// 	} else {
-		// 		_intake.set(ControlMode.PercentOutput, 0);
-		// 	}
-
-		// 	if (_gamepad.getRawButton(4) && tick > -80) {
-		// 		System.out.println("Button 4");
-		// 		_intake.set(ControlMode.PercentOutput, .1);
-		// 		isHeld = true;
-		// 	} else {
-		// 		_intake.set(ControlMode.PercentOutput, 0);
-		// 	}
-		// }
-		// else if(!_gamepad.getRawButton(3) && !_gamepad.getRawButton(4)) {
-		// 	isHeld = false;
-		// }
-
-		// if (_gamepad.getRawButton(3)) {
-		// 	if (tick >= -80 && tick <=80 ){
-		// 		System.out.println("button3 clicked");
-		// 		_intake.set(ControlMode.PercentOutput, .1);s
-		// 		tick = _intake.getSelectedSensorPosition();
-		// 	} else {
-		// 		System.out.println(tick);
-		// 		_intake.getSensorCollection().setQuadraturePosition(0, 30);
-		// 		System.out.println(tick);
-		// 		System.out.println("who would have thought");
-		// 	}
-		// }
-		// if (_gamepad.getRawButton(4)) {
-		// 	if (tick >= -80 && tick <=80 ){
-		// 		System.out.println("button4 clicked");
-		// 		_intake.set(ControlMode.PercentOutput, .1);
-				
-		// 	}
-		// }
 		
 
-<<<<<<< HEAD
 		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
-=======
-		_intake.set(ControlMode.PercentOutput, forward);
-
-		// /* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
->>>>>>> 46fd0c6c7e8b28ecb4ea9eda329db2c85b6fedb7
 		// _leftMasterFront.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		// _leftMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		
@@ -228,10 +178,14 @@ public class Robot extends TimedRobot {
 		// _rightMasterBack.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 
 		
-	//}
+
+	}
 
 
+	void move(double position) {
+		
 	
+}
 	double Turn_Scale(double forwardValue, double turnValue) {
 		if (forwardValue > 0.5)
 			return turnValue *= (1 - forwardValue);
