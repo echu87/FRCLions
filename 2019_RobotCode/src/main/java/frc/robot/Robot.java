@@ -1,6 +1,7 @@
 
 package frc.robot;
 
+/** import packages and utilities */
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
@@ -36,17 +37,27 @@ import org.opencv.videoio.Videoio;
 import frc.robot.Elevator;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+/**
+ * Created by: Earl of March Lions Software Team
+ * Created: January 2019
+ * Last Edited: February 14 2019 <3 <3 <3
+ * Desc: This code is the main code for our robot for the 2019 Deep Space game.
+ * 
+ * Other comments: Happy Valentines Day!!
+ */
 
-
-
+/** Beginning of the Robot Class
+ *  Extends the FRC TimedRobot robot class 
+ */
 public class Robot extends TimedRobot {
 
 	/** Hardware, either Talon could be a Victor */
-	// WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
-	// WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
+	/** Initialize the hardware for the robot */
+	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
+	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
 
-	// WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
-	// WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
+	WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
+	WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
 
 	 WPI_TalonSRX _intake = new WPI_TalonSRX(8);
 	boolean moveing = false;
