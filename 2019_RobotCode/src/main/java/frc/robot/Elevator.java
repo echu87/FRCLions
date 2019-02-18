@@ -4,14 +4,15 @@ import edu.wpi.first.wpilibj.*;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.command.PIDSubsystem;
 
-public class Elevator implements PIDOutput {
+public class elevator extends PIDSubsystem {
         /** The motor that will be set based on the {@link PIDController} results. */
         public WPI_TalonSRX motor;
         private double previousOutput = 0.0;
         private double rampBand;
         private double output;
-        
+        public Encoder enc;
 
         /**
          * Constructor for a PID controlled motor, with a controllable multiplier.
@@ -19,21 +20,24 @@ public class Elevator implements PIDOutput {
          * @param motor The motor being set.
          * @param rampBand The acceptable range for a motor change in one loop
          */
-        public Elevator(WPI_TalonSRX motor, double rampBand) {
+
+     
+        public elevator() {
+                super("Elevator", 1.0, 0.0, 0.0);
+                setAbsoluteTolerance(0.2);
                 this.motor = motor;
-                this.rampBand = rampBand;
+
+        }
+        
+        public void initDefaultCommand() {
 
         }
 
-        public void pidWrite(double pidInput) {
-                
-                if (Math.abs(pidInput - previousOutput) > rampBand) { //If the change is greater that we want
-                        output = pidInput - previousOutput > 0 ? previousOutput + rampBand : previousOutput - rampBand; //set output to be the previousOutput adjusted to the tolerable band, while being aware of positive/negative
-                }
-                else {
-                        output = pidInput;
-                }
-                motor.set(output);
-                previousOutput = output;
+        protected double returnPIDInput() {
+                return motor.getSelectedSensorPosition();
+        }
+
+        protected void usePIDOutput(double output) {
+                motor.pidWrite(output);
         }
 }
