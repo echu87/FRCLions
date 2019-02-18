@@ -133,8 +133,7 @@ public class Robot extends TimedRobot {
 		
 		_elevator.set(ControlMode.PercentOutput, forward);
 		
-		
-
+	
 		int	position_wanted = 10000;
 		int position_reduce = 0;
 		position_wanted -= position_reduce;
