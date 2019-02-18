@@ -37,6 +37,8 @@ import org.opencv.videoio.Videoio;
 import frc.robot.Elevator;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+
+import edu.wpi.first.wpilibj.DigitalInput;
 /**
  * Created by: Earl of March Lions Software Team
  * Created: January 2019
@@ -49,31 +51,27 @@ import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 /** Beginning of the Robot Class
  *  Extends the FRC TimedRobot robot class 
  */
-public class Robot extends TimedRobot {
+public class IntakeTest extends TimedRobot {
 
 	/** Hardware, either Talon could be a Victor */
 	/** Initialize the hardware for the robot */
-	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
-	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
 
-	WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
-	WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
+    WPI_TalonSRX _ball = new WPI_TalonSRX(9);
+    DigitalInput limitSwitch = new DigitalInput(9);
 
-	WPI_TalonSRX _elevator = new WPI_TalonSRX(7);
-	WPI_TalonSRX _intake = new WPI_TalonSRX(6);
-
-	boolean moving = false;
+	boolean moveing = false;
 	Joystick _gamepad = new Joystick(0);
 	Encoder enc;
 	int distance;
 	edu.wpi.first.cameraserver.CameraServer server;
 	boolean keepHeight = false;
-	// Elevator elevator = new Elevator(_intake, 0.0);
-	double speed = .2;
+	//Elevator elevator = new Elevator(_intake, 0.0);
+    double speed = .2;
+    double ballSpeed = .2;
 
 	@Override
 	public void robotInit() {
-		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
+		//_intake.getSensorCollection().setQuadraturePosition(0, 30);
 	}
 
 	@Override
@@ -102,98 +100,43 @@ public class Robot extends TimedRobot {
 		// _rightMasterFront.setInverted(true);
 		// _rightMasterBack.setInverted(true);
 
-		_elevator.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 1, 30);
-		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
+		// _intake.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 1, 30);
+		// _intake.getSensorCollection().setQuadraturePosition(0, 30);
 		
-		cameraInit();
+		//cameraInit();
+		
 	}
 	
 	@Override
 	public void teleopPeriodic() {
 		
-		
-		/* Gamepad processing */
-		double forward = -1 * _gamepad.getY();
-		double turn =  _gamepad.getX();		
-		System.out.println(forward);
-		int tick = _elevator.getSelectedSensorPosition();
-		
-		System.out.println(tick);
+        if (_gamepad.getRawButton(5) && !limitSwitch.get())
+        {
+            System.out.println(limitSwitch.get());
+            _ball.set(ControlMode.PercentOutput, ballSpeed);
+        }
+        if (_gamepad.getRawButton(6))
+        {
+            _ball.set(ControlMode.PercentOutput, -ballSpeed);
+        }
 
-		if (_gamepad.getTrigger()) {
-			forward = Deadband(forward);
-			turn = Deadband(turn);
-			turn = Turn_Scale(forward, turn);
-		} else {
-			forward = Deadband_Scale(forward);
-			turn = Deadband_Scale(turn);
-			turn = Turn_Scale(forward, turn);
+        if (_gamepad.getRawButton(12)) 
+        {
+			System.out.println("Call Button Stuff");
+			//elevator.pidWrite(3);
 		}
-		
-		
-		_elevator.set(ControlMode.PercentOutput, forward);
-		
 		
 
-		int	position_wanted = 10000;
-		int position_reduce = 0;
-		position_wanted -= position_reduce;
-		if (moving) {
-			if (tick < (position_wanted -10) || tick > (position_wanted +10) ) {
-				System.out.println("Button 3 run Big if");
-				if (tick < position_wanted) {
-					System.out.println("Button 3 run Big minus speed");
-					_elevator.set(ControlMode.PercentOutput, -speed);
-					System.out.println("Tick is " + (tick));
-				}
-				else if (tick > position_wanted) {
-					System.out.println("Button 3 run Big Plus speed");
-					_elevator.set(ControlMode.PercentOutput, +speed);
-					System.out.println("Tick is " + (tick));
-				}
-			}
-			else {
-				moving = false;
-			}
-		}
-		else {
-			// PIDController pidpod = new PIDController(.1,.001,0.0,tick,_intake);
-			if (_gamepad.getRawButton(3) && tick != position_wanted) {
-				System.out.println("Button 3 run");
-				
-				moving = true;
-			} 
-			else if (_gamepad.getRawButton(4) && tick > -position_wanted) {
-				System.out.println("Button 4 run");
-				_elevator.set(ControlMode.PercentOutput, speed);
-			}
-			else {
-				System.out.println("Button 3 no run");
-				System.out.println("Button 4 no run");
-				_elevator.set(ControlMode.PercentOutput, 0);
-			}
-			_elevator.set(ControlMode.PercentOutput, forward);
-		}
 
-		if (_gamepad.getTrigger()) {
-			forward = Deadband(forward);
-			turn = Deadband(turn);
-			turn = Turn_Scale(forward, turn);
-		}
-		else {
-			forward = Deadband_Scale(forward);
-			turn = Deadband_Scale(turn);
-			turn = Turn_Scale(forward, turn);
-		}
-
-		// /* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
-		// _leftMasterFront.set(ControlMode.PercentOutput, +turn, DemandType.ArbitraryFeedForward, +forward);
-		// _leftMasterBack.set(ControlMode.PercentOutput, +turn, DemandType.ArbitraryFeedForward, +forward);
 		
-		// _rightMasterFront.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, -forward);
-		// _rightMasterBack.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, -forward);
+
 	}
 
+
+	void move(double position) {
+		
+	
+}
 	double Turn_Scale(double forwardValue, double turnValue) {
 		if (forwardValue > 0.5)
 			return turnValue *= (1 - forwardValue);
@@ -232,10 +175,11 @@ public class Robot extends TimedRobot {
 	}
 
 	public void cameraInit () {
-		server = edu.wpi.first.cameraserver.CameraServer.getInstance();
-		server.startAutomaticCapture(0);
-		server.startAutomaticCapture(1);	
+		// server = edu.wpi.first.cameraserver.CameraServer.getInstance();
+		// server.startAutomaticCapture(0);
+		// server.startAutomaticCapture(1);	
 	}
 
-}
+	
 
+}
