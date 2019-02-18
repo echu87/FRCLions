@@ -1,281 +1,207 @@
+/**
+ * Phoenix Software License Agreement
+ *
+ * Copyright (C) Cross The Road Electronics.  All rights
+ * reserved.
+ * 
+ * Cross The Road Electronics (CTRE) licenses to you the right to 
+ * use, publish, and distribute copies of CRF (Cross The Road) firmware files (*.crf) and 
+ * Phoenix Software API Libraries ONLY when in use with CTR Electronics hardware products
+ * as well as the FRC roboRIO when in use in FRC Competition.
+ * 
+ * THE SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS" WITHOUT
+ * WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
+ * LIMITATION, ANY WARRANTY OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT SHALL
+ * CROSS THE ROAD ELECTRONICS BE LIABLE FOR ANY INCIDENTAL, SPECIAL, 
+ * INDIRECT OR CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF
+ * PROCUREMENT OF SUBSTITUTE GOODS, TECHNOLOGY OR SERVICES, ANY CLAIMS
+ * BY THIRD PARTIES (INCLUDING BUT NOT LIMITED TO ANY DEFENSE
+ * THEREOF), ANY CLAIMS FOR INDEMNITY OR CONTRIBUTION, OR OTHER
+ * SIMILAR COSTS, WHETHER ASSERTED ON THE BASIS OF CONTRACT, TORT
+ * (INCLUDING NEGLIGENCE), BREACH OF WARRANTY, OR OTHERWISE
+ */
 
+/**
+ * Description:
+ * The PositionClosedLoop example demonstrates the Position closed-loop servo.
+ * Tested with Logitech F350 USB Gamepad inserted into Driver Station
+ * 
+ * Be sure to select the correct feedback sensor using configSelectedFeedbackSensor() below.
+ * Use Percent Output Mode (Holding A and using Left Joystick) to confirm talon is driving 
+ * forward (Green LED on Talon/Victor) when the position sensor is moving in the postive 
+ * direction. If this is not the case, flip the boolean input in setSensorPhase().
+ * 
+ * Controls:
+ * Button 1: When pressed, start and run Position Closed Loop on Talon/Victor
+ * Button 2: When held, start and run Percent Output
+ * Left Joytick Y-Axis:
+ * 	+ Position Closed Loop: Servo Talon forward and reverse [-10, 10] rotations
+ * 	+ Percent Ouput: Throttle Talon forward and reverse
+ * 
+ * Gains for Position Closed Loop may need to be adjusted in Constants.java
+ * 
+ * Supported Version:
+ * - Talon SRX: 4.00
+ * - Victor SPX: 4.00
+ * - Pigeon IMU: 4.00
+ * - CANifier: 4.00
+ */
 package frc.robot;
-
-/** import packages and utilities */
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-
-import java.util.ArrayList;
-
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.DemandType;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PIDController;
-import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.IterativeRobot;
 
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-import edu.wpi.first.wpilibj.DigitalInput;
-
-import edu.wpi.cscore.CvSink;
-import edu.wpi.cscore.CvSource;
-import edu.wpi.cscore.UsbCamera;
-import edu.wpi.cscore.VideoSink;
-
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.Rect;
-import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
-//import org.opencv.imgproc.Imgproc;
-import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.VideoWriter;
-import org.opencv.videoio.Videoio;
-
-import frc.robot.Elevator;
-
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.can.*;
 
-/**
- * Created by: Earl of March Lions Software Team
- * Created: January 2019
- * Last Edited: February 14 2019 <3 <3 <3
- * Desc: This code is the main code for our robot for the 2019 Deep Space game.
- * 
- * Other comments: Happy Valentines Day!!
- */
-
-/**
- * Beginning of the Robot Class Extends the FRC TimedRobot robot class
- */
 public class Robot extends TimedRobot {
+    /** Hardware */
+	TalonSRX _talon = new TalonSRX(5);
+	Joystick _joy = new Joystick(0);
+	
+    /** Used to create string thoughout loop */
+	StringBuilder _sb = new StringBuilder();
+	int _loops = 0;
+	
+    /** Track button state for single press event */
+	boolean _lastButton1 = false;
 
-	/** Hardware, either Talon could be a Victor */
-	/** Initialize the hardware for the robot */
-	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
-	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
+	/** Save the target position to servo to */
+	double targetPositionRotations;
 
-	WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
-	WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
-
-	WPI_TalonSRX _elevator = new WPI_TalonSRX(5);
-	WPI_TalonSRX _intake = new WPI_TalonSRX(7);
-
-	/* limit switches */
-	DigitalInput ballLimit = new DigitalInput(9);
-	DigitalInput elevatorLimit = new DigitalInput(8);
-
-	boolean moving = false;
-	Joystick _gamepad = new Joystick(0);
-	Encoder enc;
-	int distance;
-	edu.wpi.first.cameraserver.CameraServer server;
-	boolean keepHeight = false;
-	// Elevator elevator = new Elevator(_intake, 0.0);
-	double speed = .2;
-	ArrayList<Integer> prev = new ArrayList<>();
-
-	@Override
 	public void robotInit() {
-		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
-	}
+		/* Config the sensor used for Primary PID and sensor direction */
+        _talon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 
+                                            Constants.kPIDLoopIdx,
+				                            Constants.kTimeoutMs);
 
-	@Override
-	public void teleopInit() {
-		/* Ensure motor output is neutral during init */
-		_leftMasterFront.set(ControlMode.PercentOutput, 0);
-		_leftMasterBack.set(ControlMode.PercentOutput, 0);
-		_rightMasterFront.set(ControlMode.PercentOutput, 0);
-		_rightMasterBack.set(ControlMode.PercentOutput, 0);
+		/* Ensure sensor is positive when output is positive */
+		_talon.setSensorPhase(Constants.kSensorPhase);
 
-		/* Factory Default all hardware to prevent unexpected behaviour */
-		_leftMasterFront.configFactoryDefault();
-		_leftMasterBack.configFactoryDefault();
-		_rightMasterFront.configFactoryDefault();
-		_rightMasterBack.configFactoryDefault();
+		/**
+		 * Set based on what direction you want forward/positive to be.
+		 * This does not affect sensor phase. 
+		 */ 
+		_talon.setInverted(Constants.kMotorInvert);
 
-		/* Set Neutral mode */
-		_leftMasterFront.setNeutralMode(NeutralMode.Brake);
-		_leftMasterBack.setNeutralMode(NeutralMode.Brake);
-		_rightMasterFront.setNeutralMode(NeutralMode.Brake);
-		_rightMasterBack.setNeutralMode(NeutralMode.Brake);
+		/* Config the peak and nominal outputs, 12V means full */
+		_talon.configNominalOutputForward(0, Constants.kTimeoutMs);
+		_talon.configNominalOutputReverse(0, Constants.kTimeoutMs);
+		_talon.configPeakOutputForward(1, Constants.kTimeoutMs);
+		_talon.configPeakOutputReverse(-1, Constants.kTimeoutMs);
 
-		/* Configure output direction */
-		_leftMasterFront.setInverted(false);
-		_leftMasterBack.setInverted(false);
-		_rightMasterFront.setInverted(true);
-		_rightMasterBack.setInverted(true);
+		/**
+		 * Config the allowable closed-loop error, Closed-Loop output will be
+		 * neutral within this range. See Table in Section 17.2.1 for native
+		 * units per rotation.
+		 */
+		_talon.configAllowableClosedloopError(0, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
 
-		_elevator.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 1, 30);
-		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
+		/* Config Position Closed Loop gains in slot0, tsypically kF stays zero. */
+		_talon.config_kF(Constants.kPIDLoopIdx, Constants.kGains.kF, Constants.kTimeoutMs);
+		_talon.config_kP(Constants.kPIDLoopIdx, Constants.kGains.kP, Constants.kTimeoutMs);
+		_talon.config_kI(Constants.kPIDLoopIdx, Constants.kGains.kI, Constants.kTimeoutMs);
+		_talon.config_kD(Constants.kPIDLoopIdx, Constants.kGains.kD, Constants.kTimeoutMs);
 
-		cameraInit();
-	}
+		/**
+		 * Grab the 360 degree position of the MagEncoder's absolute
+		 * position, and intitally set the relative sensor to match.
+		 */
+		int absolutePosition = _talon.getSensorCollection().getPulseWidthPosition();
 
-	@Override
-	public void teleopPeriodic() {
-
-		// /* Gamepad processing */
-		// double forward = -1 * _gamepad.getY();
-		// double turn = _gamepad.getX();
-		// // System.out.println(forward);
-		// int tick = _elevator.getSelectedSensorPosition();
-
-		// System.out.println(tick);
-
-		// if (_gamepad.getTrigger()) {
-		// 	forward = Deadband(forward);
-		// 	turn = Deadband(turn);
-		// 	turn = Turn_Scale(forward, turn);
-		// } else {
-		// 	forward = Deadband_Scale(forward);
-		// 	turn = Deadband_Scale(turn);
-		// 	turn = Turn_Scale(forward, turn);
-		// }
-
-		// // if (_gamepad.getRawButton(5) && !ballLimit.get())
-		// // _intake.set(ControlMode.PercentOutput, 1);
-
-		// if (elevatorLimit.get())
-		// 	_elevator.getSensorCollection().setQuadraturePosition(0, 30);
-
-		// _intake.set(ControlMode.PercentOutput, turn);
-
-		// if(forward == 0){
-		// 	forward = 0.1;
-		// }
-		// else if (forward < 0.08 && tick < 1500) {
-		// 	forward = .07;
-
-		// } else if (forward < 0.08) {
-		// 	if (prev.get(prev.size() - 1) == tick) {
-		// 		forward = .0370;
-
-		// 		System.out.println(prev.get(prev.size() - 1));
-		// 	} else {
-		// 		forward = .0378;
-		// 	}
-
-		// }
-		// prev.add(tick);
-		// System.out.println(forward);
-		// _elevator.set(ControlMode.PercentOutput, -forward);
-
-		// int position_wanted = 1000;
-		// int position_reduce = 0;
-		// position_wanted -= position_reduce;
-		// if (moving) {
-		// if (tick < (position_wanted -10) || tick > (position_wanted +10) ) {
-		// System.out.println("Button 3 run Big if");
-		// if (tick < position_wanted) {
-		// System.out.println("Button 3 run Big minus speed");
-		// _elevator.set(ControlMode.PercentOutput, -speed);
-		// System.out.println("Tick is " + (tick));
-		// }
-		// else if (tick > position_wanted) {
-		// System.out.println("Button 3 run Big Plus speed");
-		// _elevator.set(ControlMode.PercentOutput, +speed);
-		// System.out.println("Tick is " + (tick));
-		// }
-		// }
-		// else {
-		// moving = false;
-		// }
-		// }
-		// else {
-
-		// if (_gamepad.getRawButton(3) && tick != position_wanted) {
-		// System.out.println("Button 3 run");
-
-		// moving = true;
-		// }
-		// else if (_gamepad.getRawButton(4) && tick > -position_wanted) {
-		// System.out.println("Button 4 run");
-		// _elevator.set(ControlMode.PercentOutput, speed);
-		// }
-		// else {
-		// System.out.println("Button 3 no run");
-		// System.out.println("Button 4 no run");
-		// _elevator.set(ControlMode.PercentOutput, 0);
-		// }
-		// _elevator.set(ControlMode.PercentOutput, forward);
-		// }
-
-		// if (_gamepad.getTrigger()) {
-		// forward = Deadband(forward);
-		// turn = Deadband(turn);
-		// turn = Turn_Scale(forward, turn);
-		// }
-		// else {
-		// forward = Deadband_Scale(forward);
-		// turn = Deadband_Scale(turn);
-		// turn = Turn_Scale(forward, turn);
-		// }
-
-		// /* Arcade Drive using PercentOutput along with Arbitrary Feed Forward
-		// supplied by turn */
-		// _leftMasterFront.set(ControlMode.PercentOutput, +turn,
-		// DemandType.ArbitraryFeedForward, +forward);
-		// _leftMasterBack.set(ControlMode.PercentOutput, +turn,
-		// DemandType.ArbitraryFeedForward, +forward);
-
-		// _rightMasterFront.set(ControlMode.PercentOutput, turn,
-		// DemandType.ArbitraryFeedForward, -forward);
-		// _rightMasterBack.set(ControlMode.PercentOutput, turn,
-		// DemandType.ArbitraryFeedForward, -forward);
-
-
-
+		/* Mask out overflows, keep bottom 12 bits */
+		absolutePosition &= 0xFFF;
+		if (Constants.kSensorPhase) { absolutePosition *= -1; }
+		if (Constants.kMotorInvert) { absolutePosition *= -1; }
 		
+		/* Set the quadrature (relative) sensor to match absolute */
+		_talon.setSelectedSensorPosition(absolutePosition, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
+		_talon.getSensorCollection().setQuadraturePosition(0, 30);
+    }
+    
+	void commonLoop() {
+		/* Gamepad processing */
+		double leftYstick = _joy.getY();
+		boolean button1 = _joy.getRawButton(1);	// X-Button
+		boolean button2 = _joy.getRawButton(2);	// A-Button
+
+		/* Get Talon/Victor's current output percentage */
+		double motorOutput = _talon.getMotorOutputPercent();
+
+		int tick = -1 *_talon.getSelectedSensorPosition();
+
+		System.out.println(tick);
+
+
+		/* Deadband gamepad */
+		if (Math.abs(leftYstick) < 0.10) {
+			/* Within 10% of zero */
+			leftYstick = 0;
+		}
+
+		/* Prepare line to print */
+		_sb.append("\tout:");
+		/* Cast to int to remove decimal places */
+		_sb.append((int) (motorOutput * 100));
+		_sb.append("%");	// Percent
+
+		_sb.append("\tpos:");
+		_sb.append(_talon.getSelectedSensorPosition(0));
+		_sb.append("u"); 	// Native units
+
+		/**
+		 * When button 1 is pressed, perform Position Closed Loop to selected position,
+		 * indicated by Joystick position x10, [-10, 10] rotations
+		 */
+		if (button1) {
+			/* Position Closed Loop */
+
+			/* 10 Rotations * 4096 u/rev in either direction */
+			targetPositionRotations = leftYstick * 1000;
+			_talon.set(ControlMode.Position, targetPositionRotations);
+		}
+
+		/* When button 2 is held, just straight drive */
+		if (button2) {
+			/* Percent Output */
+
+			_talon.set(ControlMode.PercentOutput, leftYstick);
+		}
+
+		/* If Talon is in position closed-loop, print some more info */
+		if (_talon.getControlMode() == ControlMode.Position) {
+			/* ppend more signals to print when in speed mode. */
+			_sb.append("\terr:");
+			_sb.append(_talon.getClosedLoopError(0));
+			_sb.append("u");	// Native Units
+
+			_sb.append("\ttrg:");
+			_sb.append(targetPositionRotations);
+			_sb.append("u");	/// Native Units
+		}
+
+		/**
+		 * Print every ten loops, printing too much too fast is generally bad
+		 * for performance.
+		 */
+		if (++_loops >= 10) {
+			_loops = 0;
+			System.out.println(_sb.toString());
+		}
+
+		/* Reset built string for next loop */
+		_sb.setLength(0);
+		
+		/* Save button state for on press detect */
+		_lastButton1 = button1;
+    }
+    
+	/**
+	 * This function is called periodically during operator control
+	 */
+	public void teleopPeriodic() {
+		commonLoop();
 	}
-
-	double Turn_Scale(double forwardValue, double turnValue) {
-		if (forwardValue > 0.5)
-			return turnValue *= (1 - forwardValue);
-		else if (forwardValue < -0.5)
-			return turnValue *= (1 + forwardValue);
-
-		return turnValue;
-	}
-
-	/** Deadband 5 percent, used on the gamepad */
-	double Deadband_Scale(double value) {
-		/* Upper deadband */
-		if (value >= +0.05)
-			return value / 2;
-
-		/* Lower deadband */
-		if (value <= -0.05)
-			return value / 2;
-
-		/* Outside deadband */
-		return 0;
-	}
-
-	double Deadband(double value) {
-		/* Upper deadband */
-		if (value >= +0.05)
-			return value;
-
-		/* Lower deadband */
-		if (value <= -0.05)
-			return value;
-
-		/* Outside deadband */
-		return 0;
-
-	}
-
-	public void cameraInit() {
-		server = edu.wpi.first.cameraserver.CameraServer.getInstance();
-		server.startAutomaticCapture(0);
-		server.startAutomaticCapture(1);
-	}
-
 }

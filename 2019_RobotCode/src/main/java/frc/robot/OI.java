@@ -41,7 +41,7 @@ import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
 import org.opencv.videoio.Videoio;
 
-import frc.robot.Elevator;
+//import frc.robot.Elevator;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 
@@ -59,7 +59,7 @@ JoystickButton button5 = new JoystickButton(joy, 5),
             button12 = new JoystickButton(joy, 12);
             
     public OI() {
-        button5.whenPressed()
+        //button5.whenPressed();
 
 
 
