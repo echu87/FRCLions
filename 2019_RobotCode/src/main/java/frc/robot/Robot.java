@@ -59,6 +59,7 @@ import com.ctre.phoenix.motorcontrol.can.*;
 public class Robot extends TimedRobot {
     /** Hardware */
 	TalonSRX _talon = new TalonSRX(5);
+	TalonSRX _intake = new TalonSRX(7);
 	Joystick _joy = new Joystick(0);
 	
     /** Used to create string thoughout loop */
@@ -124,6 +125,7 @@ public class Robot extends TimedRobot {
 	void commonLoop() {
 		/* Gamepad processing */
 		double leftYstick = _joy.getY();
+		double leftXstick = _joy.getX();
 		boolean button1 = _joy.getRawButton(1);	// X-Button
 		boolean button2 = _joy.getRawButton(2);	// A-Button
 
@@ -159,7 +161,7 @@ public class Robot extends TimedRobot {
 			/* Position Closed Loop */
 
 			/* 10 Rotations * 4096 u/rev in either direction */
-			targetPositionRotations = leftYstick * 1000;
+			targetPositionRotations = leftYstick * 4200 ;
 			_talon.set(ControlMode.Position, targetPositionRotations);
 		}
 
@@ -196,6 +198,11 @@ public class Robot extends TimedRobot {
 		
 		/* Save button state for on press detect */
 		_lastButton1 = button1;
+
+		_intake.set(ControlMode.PercentOutput, leftXstick);
+
+		//_talon.set(ControlMode.PercentOutput, leftYstick);
+
     }
     
 	/**
