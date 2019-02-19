@@ -1,52 +1,4 @@
-/**
- * Phoenix Software License Agreement
- *
- * Copyright (C) Cross The Road Electronics.  All rights
- * reserved.
- * 
- * Cross The Road Electronics (CTRE) licenses to you the right to 
- * use, publish, and distribute copies of CRF (Cross The Road) firmware files (*.crf) and 
- * Phoenix Software API Libraries ONLY when in use with CTR Electronics hardware products
- * as well as the FRC roboRIO when in use in FRC Competition.
- * 
- * THE SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS" WITHOUT
- * WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
- * LIMITATION, ANY WARRANTY OF MERCHANTABILITY, FITNESS FOR A
- * PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * CROSS THE ROAD ELECTRONICS BE LIABLE FOR ANY INCIDENTAL, SPECIAL, 
- * INDIRECT OR CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF
- * PROCUREMENT OF SUBSTITUTE GOODS, TECHNOLOGY OR SERVICES, ANY CLAIMS
- * BY THIRD PARTIES (INCLUDING BUT NOT LIMITED TO ANY DEFENSE
- * THEREOF), ANY CLAIMS FOR INDEMNITY OR CONTRIBUTION, OR OTHER
- * SIMILAR COSTS, WHETHER ASSERTED ON THE BASIS OF CONTRACT, TORT
- * (INCLUDING NEGLIGENCE), BREACH OF WARRANTY, OR OTHERWISE
- */
 
-/**
- * Description:
- * The PositionClosedLoop example demonstrates the Position closed-loop servo.
- * Tested with Logitech F350 USB Gamepad inserted into Driver Station
- * 
- * Be sure to select the correct feedback sensor using configSelectedFeedbackSensor() below.
- * Use Percent Output Mode (Holding A and using Left Joystick) to confirm talon is driving 
- * forward (Green LED on Talon/Victor) when the position sensor is moving in the postive 
- * direction. If this is not the case, flip the boolean input in setSensorPhase().
- * 
- * Controls:
- * Button 1: When pressed, start and run Position Closed Loop on Talon/Victor
- * Button 2: When held, start and run Percent Output
- * Left Joytick Y-Axis:
- * 	+ Position Closed Loop: Servo Talon forward and reverse [-10, 10] rotations
- * 	+ Percent Ouput: Throttle Talon forward and reverse
- * 
- * Gains for Position Closed Loop may need to be adjusted in Constants.java
- * 
- * Supported Version:
- * - Talon SRX: 4.00
- * - Victor SPX: 4.00
- * - Pigeon IMU: 4.00
- * - CANifier: 4.00
- */
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -55,12 +7,20 @@ import edu.wpi.first.wpilibj.Joystick;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.*;
+import com.ctre.phoenix.motorcontrol.DemandType;
 
 public class Robot extends TimedRobot {
     /** Hardware */
-	TalonSRX _talon = new TalonSRX(5);
+	TalonSRX _elevator = new TalonSRX(5);
+	TalonSRX _hatch = new TalonSRX(6);
 	TalonSRX _intake = new TalonSRX(7);
 	Joystick _joy = new Joystick(0);
+
+	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
+	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
+
+	WPI_VictorSPX _rightMasterFront = new WPI_VictorSPX(1);
+	WPI_VictorSPX _rightMasterBack = new WPI_VictorSPX(2);
 	
     /** Used to create string thoughout loop */
 	StringBuilder _sb = new StringBuilder();
@@ -72,45 +32,47 @@ public class Robot extends TimedRobot {
 	/** Save the target position to servo to */
 	double targetPositionRotations;
 
+	edu.wpi.first.cameraserver.CameraServer server;
+
 	public void robotInit() {
 		/* Config the sensor used for Primary PID and sensor direction */
-        _talon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 
+        _elevator.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 
                                             Constants.kPIDLoopIdx,
 				                            Constants.kTimeoutMs);
 
 		/* Ensure sensor is positive when output is positive */
-		_talon.setSensorPhase(Constants.kSensorPhase);
+		_elevator.setSensorPhase(Constants.kSensorPhase);
 
 		/**
 		 * Set based on what direction you want forward/positive to be.
 		 * This does not affect sensor phase. 
 		 */ 
-		_talon.setInverted(Constants.kMotorInvert);
+		_elevator.setInverted(Constants.kMotorInvert);
 
 		/* Config the peak and nominal outputs, 12V means full */
-		_talon.configNominalOutputForward(0, Constants.kTimeoutMs);
-		_talon.configNominalOutputReverse(0, Constants.kTimeoutMs);
-		_talon.configPeakOutputForward(1, Constants.kTimeoutMs);
-		_talon.configPeakOutputReverse(-1, Constants.kTimeoutMs);
+		_elevator.configNominalOutputForward(0, Constants.kTimeoutMs);
+		_elevator.configNominalOutputReverse(0, Constants.kTimeoutMs);
+		_elevator.configPeakOutputForward(1, Constants.kTimeoutMs);
+		_elevator.configPeakOutputReverse(-1, Constants.kTimeoutMs);
 
 		/**
 		 * Config the allowable closed-loop error, Closed-Loop output will be
 		 * neutral within this range. See Table in Section 17.2.1 for native
 		 * units per rotation.
 		 */
-		_talon.configAllowableClosedloopError(0, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
+		_elevator.configAllowableClosedloopError(0, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
 
 		/* Config Position Closed Loop gains in slot0, tsypically kF stays zero. */
-		_talon.config_kF(Constants.kPIDLoopIdx, Constants.kGains.kF, Constants.kTimeoutMs);
-		_talon.config_kP(Constants.kPIDLoopIdx, Constants.kGains.kP, Constants.kTimeoutMs);
-		_talon.config_kI(Constants.kPIDLoopIdx, Constants.kGains.kI, Constants.kTimeoutMs);
-		_talon.config_kD(Constants.kPIDLoopIdx, Constants.kGains.kD, Constants.kTimeoutMs);
+		_elevator.config_kF(Constants.kPIDLoopIdx, Constants.kGains.kF, Constants.kTimeoutMs);
+		_elevator.config_kP(Constants.kPIDLoopIdx, Constants.kGains.kP, Constants.kTimeoutMs);
+		_elevator.config_kI(Constants.kPIDLoopIdx, Constants.kGains.kI, Constants.kTimeoutMs);
+		_elevator.config_kD(Constants.kPIDLoopIdx, Constants.kGains.kD, Constants.kTimeoutMs);
 
 		/**
 		 * Grab the 360 degree position of the MagEncoder's absolute
 		 * position, and intitally set the relative sensor to match.
 		 */
-		int absolutePosition = _talon.getSensorCollection().getPulseWidthPosition();
+		int absolutePosition = _elevator.getSensorCollection().getPulseWidthPosition();
 
 		/* Mask out overflows, keep bottom 12 bits */
 		absolutePosition &= 0xFFF;
@@ -118,29 +80,39 @@ public class Robot extends TimedRobot {
 		if (Constants.kMotorInvert) { absolutePosition *= -1; }
 		
 		/* Set the quadrature (relative) sensor to match absolute */
-		_talon.setSelectedSensorPosition(absolutePosition, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
-		_talon.getSensorCollection().setQuadraturePosition(0, 30);
+		_elevator.setSelectedSensorPosition(absolutePosition, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
+		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
+
+		cameraInit();
     }
     
 	void commonLoop() {
 		/* Gamepad processing */
-		double leftYstick = _joy.getY();
-		double leftXstick = _joy.getX();
-		boolean button1 = _joy.getRawButton(1);	// X-Button
-		boolean button2 = _joy.getRawButton(2);	// A-Button
+		double turn = _joy.getX()/2;
+		double forward = -1 * _joy.getY()/2;
+		
+		boolean button2 = _joy.getRawButton(2);
+		boolean button3 = _joy.getRawButton(3);
+		boolean button4 = _joy.getRawButton(4);
+		boolean button5 = _joy.getRawButton(5);	
+		boolean button6 = _joy.getRawButton(6);
+		boolean button7 = _joy.getRawButton(7);	
+		boolean button8 = _joy.getRawButton(8);
+		boolean button9 = _joy.getRawButton(9);	
+
 
 		/* Get Talon/Victor's current output percentage */
-		double motorOutput = _talon.getMotorOutputPercent();
+		double motorOutput = _elevator.getMotorOutputPercent();
 
-		int tick = -1 *_talon.getSelectedSensorPosition();
+		int tick = -1 *_elevator.getSelectedSensorPosition();
 
 		System.out.println(tick);
 
 
 		/* Deadband gamepad */
-		if (Math.abs(leftYstick) < 0.10) {
+		if (Math.abs(forward) < 0.10) {
 			/* Within 10% of zero */
-			leftYstick = 0;
+			forward = 0;
 		}
 
 		/* Prepare line to print */
@@ -150,33 +122,31 @@ public class Robot extends TimedRobot {
 		_sb.append("%");	// Percent
 
 		_sb.append("\tpos:");
-		_sb.append(_talon.getSelectedSensorPosition(0));
+		_sb.append(_elevator.getSelectedSensorPosition(0));
 		_sb.append("u"); 	// Native units
 
-		/**
-		 * When button 1 is pressed, perform Position Closed Loop to selected position,
-		 * indicated by Joystick position x10, [-10, 10] rotations
-		 */
-		if (button1) {
-			/* Position Closed Loop */
-
-			/* 10 Rotations * 4096 u/rev in either direction */
-			targetPositionRotations = leftYstick * 4200 ;
-			_talon.set(ControlMode.Position, targetPositionRotations);
-		}
-
-		/* When button 2 is held, just straight drive */
-		if (button2) {
+	
+		
+		if (button7) {
 			/* Percent Output */
-
-			_talon.set(ControlMode.PercentOutput, leftYstick);
+			targetPositionRotations = -4200;
+			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
+
+
+
+		if (button8) {
+			/* Percent Output */
+			_elevator.set(ControlMode.Current, 0);
+		}
+
+		
 
 		/* If Talon is in position closed-loop, print some more info */
-		if (_talon.getControlMode() == ControlMode.Position) {
+		if (_elevator.getControlMode() == ControlMode.Position) {
 			/* ppend more signals to print when in speed mode. */
 			_sb.append("\terr:");
-			_sb.append(_talon.getClosedLoopError(0));
+			_sb.append(_elevator.getClosedLoopError(0));
 			_sb.append("u");	// Native Units
 
 			_sb.append("\ttrg:");
@@ -196,12 +166,32 @@ public class Robot extends TimedRobot {
 		/* Reset built string for next loop */
 		_sb.setLength(0);
 		
-		/* Save button state for on press detect */
-		_lastButton1 = button1;
+		_leftMasterFront.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, +forward);
+		_leftMasterBack.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, +forward);
 
-		_intake.set(ControlMode.PercentOutput, leftXstick);
+		_rightMasterFront.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, -forward);
+		_rightMasterBack.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, -forward);
 
-		//_talon.set(ControlMode.PercentOutput, leftYstick);
+		if(button4){
+			_intake.set(ControlMode.PercentOutput, 0.5);
+		}
+		else if(button3) {
+			_intake.set(ControlMode.PercentOutput, -0.5);
+		}
+		else {
+			_intake.set(ControlMode.PercentOutput, 0);
+		}
+
+		if(button6) {
+			_hatch.set(ControlMode.PercentOutput, 0.3);
+		}
+		
+		else if(button5) {
+			_hatch.set(ControlMode.PercentOutput, -0.3);
+		}		
+		else {
+			_hatch.set(ControlMode.PercentOutput, 0);
+		}
 
     }
     
@@ -211,4 +201,11 @@ public class Robot extends TimedRobot {
 	public void teleopPeriodic() {
 		commonLoop();
 	}
+
+	public void cameraInit() {
+		server = edu.wpi.first.cameraserver.CameraServer.getInstance();
+		server.startAutomaticCapture(0);
+		server.startAutomaticCapture(1);
+	}
+
 }
