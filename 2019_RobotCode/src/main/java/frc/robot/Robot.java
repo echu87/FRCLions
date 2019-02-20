@@ -15,6 +15,7 @@ public class Robot extends TimedRobot {
 	TalonSRX _hatch = new TalonSRX(6);
 	TalonSRX _intake = new TalonSRX(7);
 	Joystick _joy = new Joystick(0);
+	Joystick _gamepad = new Joystick(1);
 
 	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
 	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
@@ -99,6 +100,18 @@ public class Robot extends TimedRobot {
 		boolean button7 = _joy.getRawButton(7);	
 		boolean button8 = _joy.getRawButton(8);
 		boolean button9 = _joy.getRawButton(9);	
+		boolean button10 = _joy.getRawButton(10);
+		boolean button11 = _joy.getRawButton(11);
+		boolean button12 = _joy.getRawButton(12);
+		
+		boolean game_button1 = _gamepad.getRawButton(1);
+		boolean game_button2 = _gamepad.getRawButton(2);
+		boolean game_button3 = _gamepad.getRawButton(3);
+		boolean game_button4 = _gamepad.getRawButton(4);
+		boolean game_button5 = _gamepad.getRawButton(5);
+		boolean game_button6 = _gamepad.getRawButton(6);
+		boolean game_button7 = _gamepad.getRawButton(7);
+		boolean game_button8 = _gamepad.getRawButton(8);
 
 
 		/* Get Talon/Victor's current output percentage */
@@ -127,20 +140,53 @@ public class Robot extends TimedRobot {
 
 	
 		
-		if (button7) {
-			/* Percent Output */
+		if (game_button8) {
+			//Second Cargo Hatch
 			targetPositionRotations = -4200;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
+		if (game_button6) {
+			// First Cargo hatch
+			targetPositionRotations = -1650;
+			_elevator.set(ControlMode.Position, targetPositionRotations);
+		}
 
+		if (game_button5) {
+			//Second Cargo Hatch
+			targetPositionRotations = -540;
+			_elevator.set(ControlMode.Position, targetPositionRotations);
+		}
+		if (game_button7) {
+			// First Cargo hatch
+			targetPositionRotations = -2920;
+			_elevator.set(ControlMode.Position, targetPositionRotations);
+		}
 
-
-		if (button8) {
-			/* Percent Output */
+		if (game_button4) {
+			//Sets location to 0.
 			_elevator.set(ControlMode.Current, 0);
 		}
 
-		
+		if (game_button3){
+			//target hatch level one
+			targetPositionRotations = _elevator.getSelectedSensorPosition(0);
+			_elevator.set(ControlMode.Position, targetPositionRotations);
+		}
+
+		if (game_button1)
+		{
+			//target hatch level two
+			targetPositionRotations = 0;
+			_elevator.set(ControlMode.PercentOutput, -0.55);
+		}
+
+		if (game_button2)
+		{
+			//target hatch level three
+			targetPositionRotations = 0;
+			_elevator.set(ControlMode.PercentOutput, 0.05);
+		}
+
 
 		/* If Talon is in position closed-loop, print some more info */
 		if (_elevator.getControlMode() == ControlMode.Position) {
@@ -151,7 +197,7 @@ public class Robot extends TimedRobot {
 
 			_sb.append("\ttrg:");
 			_sb.append(targetPositionRotations);
-			_sb.append("u");	/// Native Units
+			_sb.append("u");	// Native Units
 		}
 
 		/**
@@ -174,24 +220,24 @@ public class Robot extends TimedRobot {
 
 		if(button4){
 			_intake.set(ControlMode.PercentOutput, 0.5);
-		}
+		}		//Spins intake mechinism outwards
 		else if(button3) {
 			_intake.set(ControlMode.PercentOutput, -0.5);
-		}
+		}		//Spins intake mechinism inwards
 		else {
 			_intake.set(ControlMode.PercentOutput, 0);
-		}
+		}		//Stops intake mechinism motor
 
 		if(button6) {
 			_hatch.set(ControlMode.PercentOutput, 0.3);
-		}
+		}		//Puts harch arm up
 		
 		else if(button5) {
 			_hatch.set(ControlMode.PercentOutput, -0.3);
-		}		
+		}		//Puts hatch arm down
 		else {
 			_hatch.set(ControlMode.PercentOutput, 0);
-		}
+		}		//Stops hatch arm
 
     }
     
