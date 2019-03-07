@@ -84,7 +84,7 @@ public class Robot extends TimedRobot {
 		_elevator.setSelectedSensorPosition(absolutePosition, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
 		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
 
-		cameraInit();
+		
     }
     
 	void commonLoop() {
@@ -141,12 +141,12 @@ public class Robot extends TimedRobot {
 	
 		
 		if (game_button8) {
-			//Second Cargo Hatch
+			//Second Cargo ball
 			targetPositionRotations = -4200;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
 		if (game_button6) {
-			// First Cargo hatch
+			// First Cargo ball
 			targetPositionRotations = -1650;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
@@ -239,6 +239,8 @@ public class Robot extends TimedRobot {
 			_hatch.set(ControlMode.PercentOutput, 0);
 		}		//Stops hatch arm
 
+		
+		cameraInit();
     }
     
 	/**
@@ -251,7 +253,7 @@ public class Robot extends TimedRobot {
 	public void cameraInit() {
 		server = edu.wpi.first.cameraserver.CameraServer.getInstance();
 		server.startAutomaticCapture(0);
-		server.startAutomaticCapture(1);
+		// server.startAutomaticCapture(1);
 	}
 
 }
