@@ -36,5 +36,5 @@ public class Constants {
 	 * Gains used in Positon Closed Loop, to be adjusted accordingly
      * Gains(kp, ki, kd, kf, izone, peak output);
      */
-    static final Gains kGains = new Gains(1.5, 0.005, 0.0, 0.0, 0, 1.0);
+    static final Gains kGains = new Gains(1, 0.005, 0.0, 0.0, 0, 1.0);
 }

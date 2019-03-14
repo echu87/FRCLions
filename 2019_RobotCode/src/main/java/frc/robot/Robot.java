@@ -33,7 +33,7 @@ public class Robot extends TimedRobot {
 	/** Save the target position to servo to */
 	double targetPositionRotations;
 
-	edu.wpi.first.cameraserver.CameraServer server;
+	edu.wpi.first.cameraserver.CameraServer server, server2;
 
 	public void robotInit() {
 		/* Config the sensor used for Primary PID and sensor direction */
@@ -84,13 +84,18 @@ public class Robot extends TimedRobot {
 		_elevator.setSelectedSensorPosition(absolutePosition, Constants.kPIDLoopIdx, Constants.kTimeoutMs);
 		_elevator.getSensorCollection().setQuadraturePosition(0, 30);
 
+		cameraInit();
+
 		
     }
     
 	void commonLoop() {
 		/* Gamepad processing */
+	
+
 		double turn = _joy.getX()/2;
 		double forward = -1 * _joy.getY()/2;
+		
 		
 		boolean button2 = _joy.getRawButton(2);
 		boolean button3 = _joy.getRawButton(3);
@@ -168,7 +173,7 @@ public class Robot extends TimedRobot {
 		}
 
 		if (game_button3){
-			//target hatch level one
+			// Remain at current position
 			targetPositionRotations = _elevator.getSelectedSensorPosition(0);
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
@@ -240,7 +245,7 @@ public class Robot extends TimedRobot {
 		}		//Stops hatch arm
 
 		
-		cameraInit();
+		//cameraInit();
     }
     
 	/**
@@ -253,7 +258,8 @@ public class Robot extends TimedRobot {
 	public void cameraInit() {
 		server = edu.wpi.first.cameraserver.CameraServer.getInstance();
 		server.startAutomaticCapture(0);
-		// server.startAutomaticCapture(1);
+		server2 = edu.wpi.first.cameraserver.CameraServer.getInstance();
+		server2.startAutomaticCapture(1);
 	}
 
 }
