@@ -9,6 +9,8 @@ import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.*;
 import com.ctre.phoenix.motorcontrol.DemandType;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+
 public class Robot extends TimedRobot {
     /** Hardware */
 	TalonSRX _elevator = new TalonSRX(5);
@@ -16,6 +18,9 @@ public class Robot extends TimedRobot {
 	TalonSRX _intake = new TalonSRX(7);
 	Joystick _joy = new Joystick(0);
 	Joystick _gamepad = new Joystick(1);
+
+
+	DigitalInput hatchLimit = new DigitalInput(9);
 
 	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
 	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
@@ -34,6 +39,7 @@ public class Robot extends TimedRobot {
 	double targetPositionRotations;
 
 	edu.wpi.first.cameraserver.CameraServer server, server2;
+	
 
 	public void robotInit() {
 		/* Config the sensor used for Primary PID and sensor direction */
@@ -87,7 +93,7 @@ public class Robot extends TimedRobot {
 		cameraInit();
 
 		
-    }
+	}
     
 	void commonLoop() {
 		/* Gamepad processing */
@@ -260,6 +266,10 @@ public class Robot extends TimedRobot {
 		server.startAutomaticCapture(0);
 		server2 = edu.wpi.first.cameraserver.CameraServer.getInstance();
 		server2.startAutomaticCapture(1);
+	}
+
+	public void autonomousPeriodic() {
+		commonLoop();
 	}
 
 }
