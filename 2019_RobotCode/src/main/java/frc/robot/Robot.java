@@ -19,8 +19,9 @@ public class Robot extends TimedRobot {
 	Joystick _joy = new Joystick(0);
 	Joystick _gamepad = new Joystick(1);
 
+	DigitalInput hatchLimitF = new DigitalInput(0);
+	DigitalInput hatchLimitB = new DigitalInput(1);
 
-	DigitalInput hatchLimit = new DigitalInput(9);
 
 	WPI_VictorSPX _leftMasterFront = new WPI_VictorSPX(3);
 	WPI_VictorSPX _leftMasterBack = new WPI_VictorSPX(4);
@@ -97,10 +98,19 @@ public class Robot extends TimedRobot {
     
 	void commonLoop() {
 		/* Gamepad processing */
-	
+		
+		if(hatchLimitB.get()) {
+			System.out.println("B");
+			System.out.println(hatchLimitB.get());
+		}
+			
+		// if(hatchLimitF.get()) {
+		// 	System.out.println("F");
+		// 	System.out.println(hatchLimitF.get());
+		// }
 
-		double turn = _joy.getX()/2;
-		double forward = -1 * _joy.getY()/2;
+		double turn = _joy.getX()/1.5;
+		double forward = -1 * _joy.getY()/1.5;
 		
 		
 		boolean button2 = _joy.getRawButton(2);
@@ -130,6 +140,8 @@ public class Robot extends TimedRobot {
 
 		int tick = -1 *_elevator.getSelectedSensorPosition();
 
+
+		
 		System.out.println(tick);
 
 
@@ -153,29 +165,30 @@ public class Robot extends TimedRobot {
 		
 		if (game_button8) {
 			//Second Cargo ball
-			targetPositionRotations = -4200;
+			targetPositionRotations = -4100;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
 		if (game_button6) {
 			// First Cargo ball
-			targetPositionRotations = -1650;
+			targetPositionRotations = -1600;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
 
 		if (game_button5) {
-			//Second Cargo Hatch
+			System.out.println("button5");
+			//First Cargo Hatch
 			targetPositionRotations = -540;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
 		if (game_button7) {
-			// First Cargo hatch
+			// Second Cargo hatch
 			targetPositionRotations = -2920;
 			_elevator.set(ControlMode.Position, targetPositionRotations);
 		}
 
 		if (game_button4) {
 			//Sets location to 0.
-			_elevator.set(ControlMode.Current, 0);
+			_elevator.set(ControlMode.PercentOutput, 0);
 		}
 
 		if (game_button3){
@@ -188,7 +201,7 @@ public class Robot extends TimedRobot {
 		{
 			//target hatch level two
 			targetPositionRotations = 0;
-			_elevator.set(ControlMode.PercentOutput, -0.55);
+			_elevator.set(ControlMode.PercentOutput, -0.45);
 		}
 
 		if (game_button2)
@@ -230,21 +243,21 @@ public class Robot extends TimedRobot {
 		_rightMasterBack.set(ControlMode.PercentOutput, turn, DemandType.ArbitraryFeedForward, -forward);
 
 		if(button4){
-			_intake.set(ControlMode.PercentOutput, 0.5);
+			_intake.set(ControlMode.PercentOutput, 1);
 		}		//Spins intake mechinism outwards
 		else if(button3) {
-			_intake.set(ControlMode.PercentOutput, -0.5);
+			_intake.set(ControlMode.PercentOutput, -1);
 		}		//Spins intake mechinism inwards
 		else {
 			_intake.set(ControlMode.PercentOutput, 0);
 		}		//Stops intake mechinism motor
 
-		if(button6) {
-			_hatch.set(ControlMode.PercentOutput, 0.3);
+		if(button6 && hatchLimitF.get()== true) {
+			_hatch.set(ControlMode.PercentOutput, .4);
 		}		//Puts harch arm up
 		
-		else if(button5) {
-			_hatch.set(ControlMode.PercentOutput, -0.3);
+		else if(button5 && hatchLimitB.get() == true) {
+			_hatch.set(ControlMode.PercentOutput, -.4);
 		}		//Puts hatch arm down
 		else {
 			_hatch.set(ControlMode.PercentOutput, 0);
